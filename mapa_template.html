@@ -45,9 +45,9 @@ function show(){
   const v=cur('v'),o=cur('o');
   if(g)m.removeLayer(g);mk={};
   R=[...D[$('z').value][v]].sort((a,b)=>b[o]-a[o]);
-  const pts=R.filter(p=>p.lat!=null);
-  g=L.featureGroup(pts.map(p=>mk[p.id]=L.circleMarker([p.lat,p.lon],{radius:4+Math.sqrt(p.validos)/4,fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9})
-   .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${p.abst_pct}%`}`).on('click',()=>det(p)))).addTo(m);
+  const pts=D[$('z').value].local.filter(p=>p.lat!=null);  // dots are always locais; table follows Seção/Local
+  g=L.featureGroup(pts.map(p=>p.secoes.split(', ').concat(p.id).reduce((x,k)=>(mk[k]=x),L.circleMarker([p.lat,p.lon],{radius:4+Math.sqrt(p.validos)/4,fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9})
+   .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${p.abst_pct}%`}`).on('click',()=>det(p))))).addTo(m);
   if(pts.length)m.fitBounds(g.getBounds());
   $('h').textContent=v=='secao'?'Seção · Local':'Local';
   [$('c1').textContent,$('c2').textContent,$('c3').textContent,$('c4').textContent]=o=='dif'?['Lula','Flávio','Válidos','Dif pp']:['Aptos','Compar.','Abst','Abst %'];

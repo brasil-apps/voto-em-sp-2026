@@ -11,11 +11,12 @@ Coordenadas dos locais de votação: arquivo <i>eleitorado_local_votacao_2026_SP
 Percentuais de candidatos sobre votos válidos (sem brancos e nulos); abstenção = aptos − comparecimento, sobre aptos.
 Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet/Plotly.</div></details></nav></header><div id="p"></div><script>
 const L=__DATA__,zona=r=>r.secoes.split('-')[0];  // ponytail: local's zona = zona of its first seção
-const tr=['251','346'].map((z,i)=>{const R=L.filter(r=>zona(r)==z);return{type:'scatter',mode:'markers',name:'Zona '+z,
- x:R.map(r=>r.abst_pct),y:R.map(r=>+(r.lula/r.validos*100).toFixed(1)),
- marker:{size:R.map(r=>6+Math.sqrt(r.aptos)/3),color:['#0072b2','#e69f00'][i],opacity:.75,line:{width:1,color:'#333'}},
- text:R.map(r=>`<b>${r.nome}</b><br>Seções: ${r.secoes.split(', ').length}<br>Aptos ${r.aptos}<br>Lula ${r.lula}/${r.validos} válidos`),
- hovertemplate:'%{text}<br>Abstenção %{x}%<br>Lula %{y}%<extra></extra>'}});
+// same scale as the map: red = Lula ahead, blue = Flávio ahead, white = tie; saturates at ±60pp
+const col=v=>{const k=Math.min(Math.abs(v)/60,1),c=Math.round(255*(1-k));return v>0?`rgb(255,${c},${c})`:`rgb(${c},${c},255)`};
+const tr=[{type:'scatter',mode:'markers',x:L.map(r=>r.abst_pct),y:L.map(r=>+(r.lula/r.validos*100).toFixed(1)),
+ marker:{size:L.map(r=>6+Math.sqrt(r.aptos)/3),color:L.map(r=>col(r.dif)),line:{width:1,color:'#333'}},
+ text:L.map(r=>`<b>${r.nome}</b><br>Zona ${zona(r)} · ${r.secoes.split(', ').length} seções<br>Aptos ${r.aptos}<br>Lula ${r.lula}/${r.validos} válidos<br>Lula−Flávio ${r.dif} pp`),
+ hovertemplate:'%{text}<br>Abstenção %{x}%<br>Lula %{y}%<extra></extra>'}];
 Plotly.newPlot('p',tr,{title:'Lula (% dos válidos) × Abstenção por local — zonas 251 e 346, SP',
  xaxis:{title:'Abstenção (% dos aptos)'},yaxis:{title:'Lula (% dos válidos)'},hovermode:'closest'},{responsive:true});
 </script></body></html>

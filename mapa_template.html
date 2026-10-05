@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lula vs Flávio — Pinheiros</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>body{margin:0;font:14px system-ui;display:flex;height:100vh}#map{flex:2}#side{flex:1;overflow:auto;padding:8px}
+#det{width:280px;overflow:auto;padding:8px;border-right:1px solid #ccc;display:none}#det.on{display:block}
+#det .x{float:right;cursor:pointer;border:0;background:none;font-size:18px}.bar{display:flex;align-items:center;gap:6px;margin:3px 0}
+.bar span:first-child{width:70px}.bar div{height:12px;background:#999}.bar span:last-child{white-space:nowrap;font-size:12px}
+table{border-collapse:collapse;width:100%}td,th{padding:2px 6px;border-bottom:1px solid #ddd;text-align:right}td:nth-child(3){text-align:left}
+th{position:sticky;top:0;background:#fff}a{text-decoration:none}
+@media(max-width:700px){body{flex-direction:column;height:auto}#map{flex:none;height:60vh}#det{width:auto;border:0}}</style></head>
+<body><div id="det"></div><div id="map"></div><div id="side">
+<select id="z"></select> <label><input type="radio" name="v" value="secao" checked> Seção</label> <label><input type="radio" name="v" value="local"> Local</label><br>
+Ranking: <label><input type="radio" name="o" value="dif" checked> Lula−Flávio</label> <label><input type="radio" name="o" value="abst_pct"> Abstenção</label><br>
+<small>Cor: Lula (13) − Flávio (22), % dos válidos <span style="color:#c00">■ Lula</span> <span style="color:#00c">■ Flávio</span></small>
+<table><thead><tr><th>#</th><th></th><th id="h"></th><th id="c1"></th><th id="c2"></th><th id="c3"></th><th id="c4"></th></tr></thead><tbody id="t"></tbody></table></div>
+<script>
+const D=__DATA__;
+// ponytail: TSE candidate names file not found on the results bucket; extend by hand
+const NOMES={13:'Lula',22:'Flávio'},CB={13:'#c00',22:'#00c'};
+// red = Lula ahead, blue = Flávio ahead, white = tie; saturates at ±60pp
+const col=d=>{const k=Math.min(Math.abs(d)/60,1),c=Math.round(255*(1-k));return d>0?`rgb(255,${c},${c})`:`rgb(${c},${c},255)`};
+const acol=a=>{const k=Math.min(a/40,1);return `rgb(${Math.round(255-k*155)},${Math.round(255-k*215)},${Math.round(255-k*75)})`};  // abstenção: 0%→white, ≥40%→purple
+const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(m);
+const $=id=>document.getElementById(id),cur=n=>document.querySelector(`[name=${n}]:checked`).value;
+let g,mk={},R=[];
+function det(r){
+  const V=Object.entries(r.votos).sort((a,b)=>b[1]-a[1]),max=V[0]?.[1]||1;
+  $('det').className='on';
+  $('det').innerHTML=`<button class=x onclick="$('det').className='';m.invalidateSize()">✕</button><b>${r.nome??''}</b><br><small>${r.end??''}</small><br>
+  Seções: ${r.secoes}<br>Aptos ${r.aptos} · Compareceram ${r.comparecimento}<br><b>Abstenção ${r.abst} (${r.abst_pct}%)</b><br>
+  Lula−Flávio: <b>${r.dif>0?'+':''}${r.dif} pp</b><hr>`+
+  V.map(([k,n])=>`<div class=bar><span>${NOMES[k]?k+' '+NOMES[k]:k}</span><div style="width:${n/max*120}px;background:${CB[k]||'#999'}"></div><span>${n}${/\d/.test(k)?` · ${(n/r.validos*100).toFixed(1)}%`:''}</span></div>`).join('')+
+  (r.lat!=null?`<br><a target=_blank href="https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lon}#map=18/${r.lat}/${r.lon}">📍 ${r.lat}, ${r.lon}</a>`:'<br>∅ sem coordenada');
+  m.invalidateSize();
+}
+function show(){
+  const v=cur('v'),o=cur('o');
+  if(g)m.removeLayer(g);mk={};
+  R=[...D[$('z').value][v]].sort((a,b)=>b[o]-a[o]);
+  const pts=R.filter(p=>p.lat!=null);
+  g=L.featureGroup(pts.map(p=>mk[p.id]=L.circleMarker([p.lat,p.lon],{radius:4+Math.sqrt(p.validos)/4,fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9})
+   .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${p.abst_pct}%`}`).on('click',()=>det(p)))).addTo(m);
+  if(pts.length)m.fitBounds(g.getBounds());
+  $('h').textContent=v=='secao'?'Seção · Local':'Local';
+  [$('c1').textContent,$('c2').textContent,$('c3').textContent,$('c4').textContent]=o=='dif'?['Lula','Flávio','Válidos','Dif pp']:['Aptos','Compar.','Abst','Abst %'];
+  $('t').innerHTML=R.map((r,i)=>`<tr><td>${i+1}</td><td>${r.lat!=null?`<a href="#" title="${r.lat}, ${r.lon}" onclick="go(${i});return false">📍</a>`:'<span title="sem coordenada">∅</span>'}</td><td>${v=='secao'?r.id+' · ':''}${r.nome??''}</td>`+
+   (o=='dif'?`<td>${r.lula}</td><td>${r.flavio}</td><td>${r.validos}</td><td style="background:${col(r.dif)}">${r.dif}</td>`
+            :`<td>${r.aptos}</td><td>${r.comparecimento}</td><td>${r.abst}</td><td style="background:${acol(r.abst_pct)}">${r.abst_pct}</td>`)+`</tr>`).join('');
+}
+function go(i){const r=R[i],x=mk[r.id];det(r);m.setView(x.getLatLng(),17);x.openPopup()}
+$('z').innerHTML=Object.keys(D).map(k=>`<option value=${k}>${k=='total'?'Total':'Zona '+k}</option>`).join('');
+document.querySelectorAll('select,input').forEach(e=>e.onchange=show);show();
+</script></body></html>

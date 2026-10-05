@@ -1,7 +1,15 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lula vs Abstenção</title><script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
-<style>body{margin:0;font:14px system-ui;background:#fff}#p{width:100vw;height:100vh}</style></head>
-<body><div id="p"></div><script>
+<style>header{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:6px 12px;background:#222;color:#fff;font:14px system-ui;position:relative;z-index:1000}
+header nav{display:flex;gap:12px;align-items:center}header a,header summary{color:#fff;text-decoration:none;cursor:pointer}
+header details div{position:absolute;right:12px;top:100%;max-width:min(420px,90vw);background:#fff;color:#222;padding:10px;border:1px solid #ccc;box-shadow:0 2px 8px #0003;line-height:1.4}
+body{margin:0;font:14px system-ui;background:#fff;display:flex;flex-direction:column;height:100vh}#p{flex:1;min-height:0}</style></head>
+<body><header><b>Votos granulares · Pinheiros (SP) · Presidente 2026, 1º turno</b>
+<nav><a href="index.html">🗺️ Mapa</a><a href="dispersao.html">📈 Lula × Abstenção</a>
+<details><summary>Sobre</summary><div>Dados: boletins de urna (BU) oficiais publicados pelo TSE em resultados.tse.jus.br, zonas eleitorais 251 (Pinheiros / Alto de Pinheiros) e 346 de São Paulo, 1º turno de 04/10/2026.
+Coordenadas dos locais de votação: arquivo <i>eleitorado_local_votacao_2026_SP</i> (dadosabertos.tse.jus.br).
+Percentuais de candidatos sobre votos válidos (sem brancos e nulos); abstenção = aptos − comparecimento, sobre aptos.
+Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet/Plotly.</div></details></nav></header><div id="p"></div><script>
 const L=__DATA__,zona=r=>r.secoes.split('-')[0];  // ponytail: local's zona = zona of its first seção
 const tr=['251','346'].map((z,i)=>{const R=L.filter(r=>zona(r)==z);return{type:'scatter',mode:'markers',name:'Zona '+z,
  x:R.map(r=>r.abst_pct),y:R.map(r=>+(r.lula/r.validos*100).toFixed(1)),

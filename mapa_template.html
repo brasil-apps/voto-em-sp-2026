@@ -1,9 +1,9 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lula vs Flávio — Pinheiros</title>
+<title>Lula vs Flávio — São Paulo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>header{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:6px 12px;background:#222;color:#fff;font:14px system-ui;position:relative;z-index:1000}
 header nav{display:flex;gap:12px;align-items:center}header a,header summary{color:#fff;text-decoration:none;cursor:pointer}
-header details div{position:absolute;right:12px;top:100%;max-width:min(420px,90vw);background:#fff;color:#222;padding:10px;border:1px solid #ccc;box-shadow:0 2px 8px #0003;line-height:1.4}
+header details div a{color:#06c;text-decoration:underline}header details div{position:absolute;right:12px;top:100%;max-width:min(420px,90vw);background:#fff;color:#222;padding:10px;border:1px solid #ccc;box-shadow:0 2px 8px #0003;line-height:1.4}
 body{margin:0;font:14px system-ui;display:flex;flex-direction:column;height:100vh}main{display:flex;flex:1;min-height:0}#map{flex:2}#side{flex:1;overflow:auto;padding:8px}
 #det{width:280px;overflow:auto;padding:8px;border-right:1px solid #ccc;display:none}#det.on{display:block}
 #det .x{float:right;cursor:pointer;border:0;background:none;font-size:18px}.bar{display:flex;align-items:center;gap:6px;margin:3px 0}
@@ -11,15 +11,15 @@ body{margin:0;font:14px system-ui;display:flex;flex-direction:column;height:100v
 table{border-collapse:collapse;width:100%}td,th{padding:2px 6px;border-bottom:1px solid #ddd;text-align:right}td:nth-child(3){text-align:left}
 th{position:sticky;top:0;background:#fff}a{text-decoration:none}
 @media(max-width:700px){body{height:auto}main{flex-direction:column}#map{flex:none;height:60vh}#det{width:auto;border:0}}</style></head>
-<body><header><b>Votos granulares · Pinheiros (SP) · Presidente 2026, 1º turno</b>
-<nav><a href="index.html">🗺️ Mapa</a><a href="dispersao.html">📈 Lula × Abstenção</a>
-<details><summary>Sobre</summary><div>Dados: boletins de urna (BU) oficiais publicados pelo TSE em resultados.tse.jus.br, zonas eleitorais 251 (Pinheiros / Alto de Pinheiros) e 346 de São Paulo, 1º turno de 04/10/2026.
+<body><header><b>Votos granulares · Cidade de São Paulo · Presidente 2026, 1º turno</b>
+<nav>
+<details><summary>Sobre</summary><div>Dados: boletins de urna (BU) oficiais publicados pelo TSE em resultados.tse.jus.br, todas as seções (57 zonas eleitorais) da cidade de São Paulo, 1º turno de 04/10/2026.
 Coordenadas dos locais de votação: arquivo <i>eleitorado_local_votacao_2026_SP</i> (dadosabertos.tse.jus.br).
 Percentuais de candidatos sobre votos válidos (sem brancos e nulos); abstenção = aptos − comparecimento, sobre aptos.
-Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet/Plotly.</div></details></nav></header><main><div id="det"></div><div id="map"></div><div id="side">
+Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet, sob licença <a href="LICENSE">GPL-3.0</a>.</div></details></nav></header><main><div id="det"></div><div id="map"></div><div id="side">
 <select id="z" autocomplete="off"></select> <label><input type="radio" name="v" value="secao"> Seção</label> <label><input type="radio" name="v" value="local" checked> Local</label><br>
 Ranking: <label><input type="radio" name="o" value="dif" checked> Lula−Flávio</label> <label><input type="radio" name="o" value="abst_pct"> Abstenção</label><br>
-<small>Cor: Lula (13) − Flávio (22), % dos válidos <span style="color:#c00">■ Lula</span> <span style="color:#00c">■ Flávio</span></small>
+<small id="leg">Cor: Lula (13) − Flávio (22), % dos válidos <span style="color:#c00">■ Lula</span> <span style="color:#00c">■ Flávio</span></small>
 <table><thead><tr><th>#</th><th></th><th id="h"></th><th id="c1"></th><th id="c2"></th><th id="c3"></th><th id="c4"></th></tr></thead><tbody id="t"></tbody></table></div></main>
 <script>
 const D=__DATA__;
@@ -27,26 +27,33 @@ const D=__DATA__;
 const NOMES={13:'Lula',22:'Flávio'},CB={13:'#c00',22:'#00c'};
 // red = Lula ahead, blue = Flávio ahead, white = tie; saturates at ±60pp
 const col=d=>{const k=Math.min(Math.abs(d)/60,1),c=Math.round(255*(1-k));return d>0?`rgb(255,${c},${c})`:`rgb(${c},${c},255)`};
-const acol=a=>{const k=Math.min(a/40,1);return `rgb(${Math.round(255-k*155)},${Math.round(255-k*215)},${Math.round(255-k*75)})`};  // abstenção: 0%→white, ≥40%→purple
-const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(m);
+// abstenção: viridis-like, ≤15% white → 27.5% teal → ≥40% dark purple
+const acol=a=>{const k=Math.min(Math.max((a-15)/25,0),1),S=[[255,255,255],[33,145,140],[68,1,84]],i=k<.5?0:1,f=k<.5?k*2:k*2-1;
+ return `rgb(${S[i].map((c,j)=>Math.round(c+(S[i+1][j]-c)*f)).join(',')})`};
+const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'Votos: <a href="https://resultados.tse.jus.br" target=_blank>TSE</a> (boletins de urna) · Locais: <a href="https://dadosabertos.tse.jus.br" target=_blank>TSE Dados Abertos</a> · Mapa: © <a href="https://www.openstreetmap.org/copyright" target=_blank>OpenStreetMap</a>'}).addTo(m);
 const $=id=>document.getElementById(id),cur=n=>document.querySelector(`[name=${n}]:checked`).value;
 let g,mk={},R=[];
 function det(r){
   const V=Object.entries(r.votos).sort((a,b)=>b[1]-a[1]),max=V[0]?.[1]||1;
   $('det').className='on';
   $('det').innerHTML=`<button class=x onclick="$('det').className='';m.invalidateSize()">✕</button><b>${r.nome??''}</b><br><small>${r.end??''}</small><br>
-  Seções: ${r.secoes}<br>Aptos ${r.aptos} · Compareceram ${r.comparecimento}<br><b>Abstenção ${r.abst} (${r.abst_pct}%)</b><br>
+  Seções: ${r.secoes}<br>Aptos ${r.aptos} · Compareceram ${r.comparecimento}<br>Abstenção ${r.abst} (${r.abst_pct}%)<br>
   Lula−Flávio: <b>${r.dif>0?'+':''}${r.dif} pp</b><hr>`+
   V.map(([k,n])=>`<div class=bar><span>${NOMES[k]?k+' '+NOMES[k]:k}</span><div style="width:${n/max*120}px;background:${CB[k]||'#999'}"></div><span>${n}${/\d/.test(k)?` · ${(n/r.validos*100).toFixed(1)}%`:''}</span></div>`).join('')+
   (r.lat!=null?`<br><a target=_blank href="https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lon}#map=18/${r.lat}/${r.lon}">📍 ${r.lat}, ${r.lon}</a>`:'<br>∅ sem coordenada');
   m.invalidateSize();
 }
+// capped size, shrinks when zoomed out so dense areas don't turn into one blob
+const rad=p=>Math.min(3+Math.sqrt(p.validos)/3,30)*Math.min(Math.max((m.getZoom()-9)/5,.35),1);
+m.on('zoomend',()=>g&&g.eachLayer(x=>x.setRadius(rad(x.p))));
+const LEG={dif:$('leg').innerHTML,abst_pct:'Cor: abstenção, % dos aptos <span style="background:linear-gradient(90deg,#fff,rgb(33,145,140),rgb(68,1,84));display:inline-block;width:90px;height:10px;border:1px solid #999"></span> 15% → 40%'};
 function show(){
-  const v=cur('v'),o=cur('o');
+  const v=cur('v'),o=cur('o');$('leg').innerHTML=LEG[o];
   if(g)m.removeLayer(g);mk={};
   R=[...D[$('z').value][v]].sort((a,b)=>b[o]-a[o]);
-  const pts=D[$('z').value].local.filter(p=>p.lat!=null);  // dots are always locais; table follows Seção/Local
-  g=L.featureGroup(pts.map(p=>p.secoes.split(', ').concat(p.id).reduce((x,k)=>(mk[k]=x),L.circleMarker([p.lat,p.lon],{radius:4+Math.sqrt(p.validos)/4,fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9})
+  // dots are always locais; table follows Seção/Local. Draw big first, small on top: order never depends on color
+  const pts=D[$('z').value].local.filter(p=>p.lat!=null).sort((a,b)=>b.validos-a.validos);
+  g=L.featureGroup(pts.map(p=>p.secoes.split(', ').concat(p.id).reduce((x,k)=>(mk[k]=x),Object.assign(L.circleMarker([p.lat,p.lon],{radius:rad(p),fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9}),{p})
    .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${p.abst_pct}%`}`).on('click',()=>det(p))))).addTo(m);
   if(pts.length)m.fitBounds(g.getBounds());
   $('h').textContent=v=='secao'?'Seção · Local':'Local';

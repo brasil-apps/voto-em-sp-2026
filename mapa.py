@@ -4,7 +4,8 @@ from collections import Counter
 import pandas as pd
 from parse_bu import parse_bu
 
-df = pd.concat(pd.DataFrame(parse_bu(f)) for f in glob.glob("bus/*-bu.dat"))
+# São Paulo city only; BUs from other municípios (earlier Grande SP run) stay on disk, ignored
+df = pd.concat(pd.DataFrame(parse_bu(f)) for f in glob.glob("bus/o03220sp71072*-bu.dat"))
 p = df[(df.id_eleicao == 6257) & (df.cargo == 1)].copy()
 p["label"] = p.numero.astype("Int64").astype(str).where(p.tipo_voto == "nominal", p.tipo_voto)
 K = ["zona", "secao"]
@@ -17,10 +18,13 @@ geo = pd.read_csv("eleitorado_local_votacao_2026_SP.csv", sep=";", encoding="lat
                   usecols=["CD_MUNICIPIO", "NR_ZONA", "NR_SECAO", "NM_LOCAL_VOTACAO", "DS_ENDERECO",
                            "NR_LATITUDE", "NR_LONGITUDE"])
 geo = geo[geo.CD_MUNICIPIO == 71072].drop_duplicates(["NR_ZONA", "NR_SECAO"])
+geo.loc[geo.NR_LATITUDE == -1, ["NR_LATITUDE", "NR_LONGITUDE"]] = None  # TSE uses -1 for unknown coords
 sec = sec.merge(geo, left_on=K, right_on=["NR_ZONA", "NR_SECAO"], how="left")
 sec["id"] = sec.zona.astype(str) + "-" + sec.secao.astype(str)
 sec["secoes"] = sec.id
-print(len(sec), "seções;", sec.NR_LATITUDE.isna().sum(), "sem coordenada")
+sem = sec.NR_LATITUDE.isna()
+print(len(sec), "seções;", sem.sum(), "sem coordenada (removidas de mapa e rankings)")
+sec = sec[~sem]
 
 
 def recs(g):
@@ -51,8 +55,7 @@ r[cols].to_csv("ranking.csv", index=False)
 r.sort_values("abst_pct", ascending=False)[cols].to_csv("ranking_abstencao.csv", index=False)
 print(r[r.id == "346-722"][["votos", "aptos", "comparecimento", "abst", "abst_pct"]].to_dict("records"))
 
-scopes = {"total": sec} | {str(z): g for z, g in sec.groupby("zona")}
+scopes = {"total": sec} | {str(z): g for z, g in sorted(sec.groupby("zona"))}
 D = {k: {v: json.loads(recs(f(g)).to_json(orient="records")) for v, f in [("secao", lambda x: x), ("local", locais)]}
      for k, g in scopes.items()}
 open("index.html", "w").write(open("mapa_template.html").read().replace("__DATA__", json.dumps(D)))
-open("dispersao.html", "w").write(open("dispersao_template.html").read().replace("__DATA__", json.dumps(D["total"]["local"])))

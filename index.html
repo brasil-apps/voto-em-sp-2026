@@ -17,7 +17,7 @@ th{position:sticky;top:0;background:#fff}a{text-decoration:none}
 Coordenadas dos locais de votação: arquivo <i>eleitorado_local_votacao_2026_SP</i> (dadosabertos.tse.jus.br).
 Percentuais de candidatos sobre votos válidos (sem brancos e nulos); abstenção = aptos − comparecimento, sobre aptos.
 Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet/Plotly.</div></details></nav></header><main><div id="det"></div><div id="map"></div><div id="side">
-<select id="z"></select> <label><input type="radio" name="v" value="secao" checked> Seção</label> <label><input type="radio" name="v" value="local"> Local</label><br>
+<select id="z" autocomplete="off"></select> <label><input type="radio" name="v" value="secao" checked> Seção</label> <label><input type="radio" name="v" value="local"> Local</label><br>
 Ranking: <label><input type="radio" name="o" value="dif" checked> Lula−Flávio</label> <label><input type="radio" name="o" value="abst_pct"> Abstenção</label><br>
 <small>Cor: Lula (13) − Flávio (22), % dos válidos <span style="color:#c00">■ Lula</span> <span style="color:#00c">■ Flávio</span></small>
 <table><thead><tr><th>#</th><th></th><th id="h"></th><th id="c1"></th><th id="c2"></th><th id="c3"></th><th id="c4"></th></tr></thead><tbody id="t"></tbody></table></div></main>
@@ -57,5 +57,6 @@ function show(){
 }
 function go(i){const r=R[i],x=mk[r.id];det(r);m.setView(x.getLatLng(),17);x.openPopup()}
 $('z').innerHTML=Object.keys(D).map(k=>`<option value=${k}>${k=='total'?'Total':'Zona '+k}</option>`).join('');
+$("z").value="total";document.querySelectorAll("input[value=dif],input[value=secao]").forEach(e=>e.checked=true);  // browsers restore old form state on reload
 document.querySelectorAll('select,input').forEach(e=>e.onchange=show);show();
 </script></body></html>

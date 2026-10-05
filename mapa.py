@@ -55,3 +55,4 @@ scopes = {"total": sec} | {str(z): g for z, g in sec.groupby("zona")}
 D = {k: {v: json.loads(recs(f(g)).to_json(orient="records")) for v, f in [("secao", lambda x: x), ("local", locais)]}
      for k, g in scopes.items()}
 open("index.html", "w").write(open("mapa_template.html").read().replace("__DATA__", json.dumps(D)))
+open("dispersao.html", "w").write(open("dispersao_template.html").read().replace("__DATA__", json.dumps(D["total"]["local"])))

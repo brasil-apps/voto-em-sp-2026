@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lula vs Abstenção</title><script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>body{margin:0;font:14px system-ui;background:#fff}#p{width:100vw;height:100vh}</style></head>
+<body><div id="p"></div><script>
+const L=__DATA__,zona=r=>r.secoes.split('-')[0];  // ponytail: local's zona = zona of its first seção
+const tr=['251','346'].map((z,i)=>{const R=L.filter(r=>zona(r)==z);return{type:'scatter',mode:'markers',name:'Zona '+z,
+ x:R.map(r=>r.abst_pct),y:R.map(r=>+(r.lula/r.validos*100).toFixed(1)),
+ marker:{size:R.map(r=>6+Math.sqrt(r.aptos)/3),color:['#0072b2','#e69f00'][i],opacity:.75,line:{width:1,color:'#333'}},
+ text:R.map(r=>`<b>${r.nome}</b><br>Seções: ${r.secoes.split(', ').length}<br>Aptos ${r.aptos}<br>Lula ${r.lula}/${r.validos} válidos`),
+ hovertemplate:'%{text}<br>Abstenção %{x}%<br>Lula %{y}%<extra></extra>'}});
+Plotly.newPlot('p',tr,{title:'Lula (% dos válidos) × Abstenção por local — zonas 251 e 346, SP',
+ xaxis:{title:'Abstenção (% dos aptos)'},yaxis:{title:'Lula (% dos válidos)'},hovermode:'closest'},{responsive:true});
+</script></body></html>

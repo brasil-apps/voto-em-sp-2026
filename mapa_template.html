@@ -1,8 +1,15 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lula vs Flávio — São Paulo</title>
+<title>Lula x Flávio em São Paulo — mapa seção por seção</title>
+<meta name="description" content="Mapa interativo do 1º turno de 2026 em São Paulo: Lula x Flávio Bolsonaro seção por seção, em todas as 57 zonas e 26.573 seções eleitorais da capital. Veja como votou o seu bairro.">
+<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR"><meta property="og:url" content="https://brasil-apps.github.io/voto-em-sp-2026/">
+<meta property="og:title" content="Como votou cada bairro de São Paulo? Lula x Flávio, seção por seção">
+<meta property="og:description" content="Vermelho = Lula, azul = Flávio. Mapa interativo com os boletins de urna de 26.573 seções da capital paulista. Encontre o seu local de votação.">
+<meta property="og:image" content="https://brasil-apps.github.io/voto-em-sp-2026/card.png"><meta property="og:image:width" content="473"><meta property="og:image:height" content="469"><meta property="og:image:alt" content="Mapa de São Paulo com círculos vermelhos (Lula) e azuis (Flávio) por local de votação">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Como votou cada bairro de São Paulo? Lula x Flávio"><meta name="twitter:description" content="Mapa interativo seção por seção da capital paulista, 1º turno de 2026."><meta name="twitter:image" content="https://brasil-apps.github.io/voto-em-sp-2026/card.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>header{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:6px 12px;background:#222;color:#fff;font:14px system-ui;position:relative;z-index:1000}
-header nav{display:flex;gap:12px;align-items:center}header a,header summary{color:#fff;text-decoration:none;cursor:pointer}
+<style>header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:6px 12px;background:#fff;color:#222;border-bottom:1px solid #ddd;font:14px system-ui;position:relative;z-index:1000}
+header>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header small{color:#777;font-weight:normal}
+header nav{display:flex;gap:12px;align-items:center}#tabs button{font:inherit;border:1px solid #ccc;background:#fff;padding:4px 10px;border-radius:6px;cursor:pointer}#tabs button.on{background:#222;color:#fff;border-color:#222}header summary{color:#06c;cursor:pointer;list-style:none;white-space:nowrap}
 header details div a{color:#06c;text-decoration:underline}header details div{position:absolute;right:12px;top:100%;max-width:min(420px,90vw);background:#fff;color:#222;padding:10px;border:1px solid #ccc;box-shadow:0 2px 8px #0003;line-height:1.4}
 body{margin:0;font:14px system-ui;display:flex;flex-direction:column;height:100vh}main{display:flex;flex:1;min-height:0}#map{flex:2}#side{flex:1;overflow:auto;padding:8px}
 #det{width:280px;overflow:auto;padding:8px;border-right:1px solid #ccc;display:none}#det.on{display:block}
@@ -10,60 +17,79 @@ body{margin:0;font:14px system-ui;display:flex;flex-direction:column;height:100v
 .bar span:first-child{width:70px}.bar div{height:12px;background:#999}.bar span:last-child{white-space:nowrap;font-size:12px}
 table{border-collapse:collapse;width:100%}td,th{padding:2px 6px;border-bottom:1px solid #ddd;text-align:right}td:nth-child(3){text-align:left}
 th{position:sticky;top:0;background:#fff}a{text-decoration:none}
-@media(max-width:700px){body{height:auto}main{flex-direction:column}#map{flex:none;height:60vh}#det{width:auto;border:0}}</style></head>
-<body><header><b>Votos granulares · Cidade de São Paulo · Presidente 2026, 1º turno</b>
-<nav>
-<details><summary>Sobre</summary><div>Dados: boletins de urna (BU) oficiais publicados pelo TSE em resultados.tse.jus.br, todas as seções (57 zonas eleitorais) da cidade de São Paulo, 1º turno de 04/10/2026.
+#ctl{display:grid;gap:6px;margin-bottom:8px}#ctl select{min-height:32px;font:inherit}#ctl label{white-space:nowrap}#ctl small{color:#555}
+.grad{display:inline-block;width:90px;height:10px;border:1px solid #999;vertical-align:middle}
+@media(max-width:700px){body{height:auto}main{flex-direction:column}#map{flex:none;height:55vh}#det{position:fixed;left:0;right:0;bottom:0;max-height:45vh;width:auto;z-index:1001;background:#fff;border:0;border-radius:12px 12px 0 0;box-shadow:0 -2px 12px #0003;padding:10px 12px}#det .x{font-size:22px;padding:4px 8px}header small{display:none}}</style></head>
+<body><header><b>Lula × Flávio · São Paulo <small id="sub">1º turno 2026, por seção</small></b>
+<nav><span id="tabs"><button data-t="t1" class="on">1º turno</button> <button data-t="t2">2º turno</button> <button data-t="diff">Diferença</button></span>
+<details><summary>ⓘ Sobre</summary><div>Dados: boletins de urna (BU) oficiais publicados pelo TSE em resultados.tse.jus.br, todas as seções (57 zonas eleitorais) da cidade de São Paulo, 1º turno de 04/10/2026 e 2º turno de 25/10/2026. "Diferença" = 2º turno − 1º turno, local a local.
 Coordenadas dos locais de votação: arquivo <i>eleitorado_local_votacao_2026_SP</i> (dadosabertos.tse.jus.br).
 Percentuais de candidatos sobre votos válidos (sem brancos e nulos); abstenção = aptos − comparecimento, sobre aptos.
 Projeto independente, sem vínculo com o TSE. Código: scraper + parser dos .dat + Leaflet, sob licença <a href="LICENSE">GPL-3.0</a>.</div></details></nav></header><main><div id="det"></div><div id="map"></div><div id="side">
-<select id="z" autocomplete="off"></select> <label><input type="radio" name="v" value="secao"> Seção</label> <label><input type="radio" name="v" value="local" checked> Local</label><br>
-Ranking: <label><input type="radio" name="o" value="dif" checked> Lula−Flávio</label> <label><input type="radio" name="o" value="abst_pct"> Abstenção</label><br>
-<small id="leg">Cor: Lula (13) − Flávio (22), % dos válidos <span style="color:#c00">■ Lula</span> <span style="color:#00c">■ Flávio</span></small>
+<div id="ctl"><label>Zona eleitoral: <select id="z" autocomplete="off"></select></label>
+<div>Colorir por: <label><input type="radio" name="o" value="dif" checked> Vantagem Lula/Flávio</label> <label><input type="radio" name="o" value="abst_pct"> Abstenção</label></div>
+<div>Tabela por: <label><input type="radio" name="v" value="local" checked> Local de votação</label> <label><input type="radio" name="v" value="secao"> Seção</label></div>
+<small><span id="leg">Lula <span class="grad" style="background:linear-gradient(90deg,#f00,#fff,#00f)"></span> Flávio (diferença em pp dos válidos)</span><br>Toque num círculo ou no 📍 da tabela para ver detalhes.</small></div>
 <table><thead><tr><th>#</th><th></th><th id="h"></th><th id="c1"></th><th id="c2"></th><th id="c3"></th><th id="c4"></th></tr></thead><tbody id="t"></tbody></table></div></main>
 <script>
 const D=__DATA__;
 // ponytail: TSE candidate names file not found on the results bucket; extend by hand
 const NOMES={13:'Lula',22:'Flávio'},CB={13:'#c00',22:'#00c'};
 // red = Lula ahead, blue = Flávio ahead, white = tie; saturates at ±60pp
-const col=d=>{const k=Math.min(Math.abs(d)/60,1),c=Math.round(255*(1-k));return d>0?`rgb(255,${c},${c})`:`rgb(${c},${c},255)`};
+const col=(d,s=60)=>{const k=Math.min(Math.abs(d)/s,1),c=Math.round(255*(1-k));return d>0?`rgb(255,${c},${c})`:`rgb(${c},${c},255)`};
 // abstenção: viridis-like, ≤15% white → 27.5% teal → ≥40% dark purple
+// diff tab: green = abstenção caiu, purple = subiu; saturates at ±10pp
+const dcol=d=>{const k=Math.min(Math.abs(d)/10,1),c=Math.round(255*(1-k));return d>0?`rgb(${128+c/2|0},${c},255)`:`rgb(${c},255,${c})`};
 const acol=a=>{const k=Math.min(Math.max((a-15)/25,0),1),S=[[255,255,255],[33,145,140],[68,1,84]],i=k<.5?0:1,f=k<.5?k*2:k*2-1;
  return `rgb(${S[i].map((c,j)=>Math.round(c+(S[i+1][j]-c)*f)).join(',')})`};
 const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'Votos: <a href="https://resultados.tse.jus.br" target=_blank>TSE</a> (boletins de urna) · Locais: <a href="https://dadosabertos.tse.jus.br" target=_blank>TSE Dados Abertos</a> · Mapa: © <a href="https://www.openstreetmap.org/copyright" target=_blank>OpenStreetMap</a>'}).addTo(m);
 const $=id=>document.getElementById(id),cur=n=>document.querySelector(`[name=${n}]:checked`).value;
-let g,mk={},R=[];
+let g,mk={},R=[],T='t1';
+const sg=n=>T=='diff'&&n>0?'+'+n:n;  // signed numbers in the diff tab
 function det(r){
-  const V=Object.entries(r.votos).sort((a,b)=>b[1]-a[1]),max=V[0]?.[1]||1;
+  const V=Object.entries(r.votos).sort((a,b)=>b[1]-a[1]),max=Math.max(...V.map(v=>Math.abs(v[1])),1);
   $('det').className='on';
   $('det').innerHTML=`<button class=x onclick="$('det').className='';m.invalidateSize()">✕</button><b>${r.nome??''}</b><br><small>${r.end??''}</small><br>
-  Seções: ${r.secoes}<br>Aptos ${r.aptos} · Compareceram ${r.comparecimento}<br>Abstenção ${r.abst} (${r.abst_pct}%)<br>
+  Seções: ${r.secoes}<br>${T=='diff'?'<b>2º turno − 1º turno</b><br>':''}Aptos ${sg(r.aptos)} · Compareceram ${sg(r.comparecimento)}<br>Abstenção ${sg(r.abst)} (${sg(r.abst_pct)}${T=='diff'?' pp':'%'})<br>
   Lula−Flávio: <b>${r.dif>0?'+':''}${r.dif} pp</b><hr>`+
-  V.map(([k,n])=>`<div class=bar><span>${NOMES[k]?k+' '+NOMES[k]:k}</span><div style="width:${n/max*120}px;background:${CB[k]||'#999'}"></div><span>${n}${/\d/.test(k)?` · ${(n/r.validos*100).toFixed(1)}%`:''}</span></div>`).join('')+
+  V.map(([k,n])=>`<div class=bar><span>${NOMES[k]?k+' '+NOMES[k]:k}</span><div style="width:${Math.abs(n)/max*120}px;background:${CB[k]||'#999'}"></div><span>${sg(n)}${T!='diff'&&/\d/.test(k)?` · ${(n/r.validos*100).toFixed(1)}%`:''}</span></div>`).join('')+
   (r.lat!=null?`<br><a target=_blank href="https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lon}#map=18/${r.lat}/${r.lon}">📍 ${r.lat}, ${r.lon}</a>`:'<br>∅ sem coordenada');
   m.invalidateSize();
 }
 // capped size, shrinks when zoomed out so dense areas don't turn into one blob
-const rad=p=>Math.min(3+Math.sqrt(p.validos)/3,30)*Math.min(Math.max((m.getZoom()-9)/5,.35),1);
+const rad=p=>Math.min(3+Math.sqrt(p.n??p.validos)/3,30)*Math.min(Math.max((m.getZoom()-9)/5,.35),1);
 m.on('zoomend',()=>g&&g.eachLayer(x=>x.setRadius(rad(x.p))));
-const LEG={dif:$('leg').innerHTML,abst_pct:'Cor: abstenção, % dos aptos <span style="background:linear-gradient(90deg,#fff,rgb(33,145,140),rgb(68,1,84));display:inline-block;width:90px;height:10px;border:1px solid #999"></span> 15% → 40%'};
+const LEG={ddif:'Lula ganhou <span class="grad" style="background:linear-gradient(90deg,#f00,#fff,#00f)"></span> Flávio ganhou (variação da diferença, ±15 pp)',dabst_pct:'Abstenção caiu <span class="grad" style="background:linear-gradient(90deg,#0f0,#fff,#80f)"></span> subiu (±10 pp)',dif:$('leg').innerHTML,abst_pct:'Abstenção 15% <span class="grad" style="background:linear-gradient(90deg,#fff,rgb(33,145,140),rgb(68,1,84))"></span> 40% (dos aptos)'};
+// diff rows: 2º turno minus 1º turno for every number, matched by id (same seção / same local+coordinate); n keeps 2º turno size for the dot
+const N=['lula','flavio','validos','aptos','comparecimento','abst'],dc={};
+function diff(z,v){
+  const k=z+v;if(dc[k])return dc[k];
+  const A=Object.fromEntries((D.t1[z]?.[v]||[]).map(r=>[r.id,r]));
+  return dc[k]=(D.t2[z]?.[v]||[]).filter(b=>A[b.id]).map(b=>{const a=A[b.id],r={...b,n:b.validos,votos:{}};
+    N.forEach(f=>r[f]=b[f]-a[f]);r.dif=+(b.dif-a.dif).toFixed(1);r.abst_pct=+(b.abst_pct-a.abst_pct).toFixed(1);
+    new Set([...Object.keys(a.votos),...Object.keys(b.votos)]).forEach(c=>r.votos[c]=(b.votos[c]||0)-(a.votos[c]||0));return r});
+}
+const rows=(z,v)=>T=='diff'?diff(z,v):D[T][z]?.[v]||[];
 function show(){
-  const v=cur('v'),o=cur('o');$('leg').innerHTML=LEG[o];
+  const v=cur('v'),o=cur('o'),z=$('z').value,dt=T=='diff';$('leg').innerHTML=LEG[(dt?'d':'')+o];
+  const cc=dt?(o=='dif'?d=>col(d,15):dcol):(o=='dif'?col:acol);
+  $('sub').textContent=dt?'2º − 1º turno 2026, por seção':(T=='t1'?'1º':'2º')+' turno 2026, por seção';
   if(g)m.removeLayer(g);mk={};
-  R=[...D[$('z').value][v]].sort((a,b)=>b[o]-a[o]);
+  R=[...rows(z,v)].sort((a,b)=>b[o]-a[o]);
   // dots are always locais; table follows Seção/Local. Draw big first, small on top: order never depends on color
-  const pts=D[$('z').value].local.filter(p=>p.lat!=null).sort((a,b)=>b.validos-a.validos);
-  g=L.featureGroup(pts.map(p=>p.secoes.split(', ').concat(p.id).reduce((x,k)=>(mk[k]=x),Object.assign(L.circleMarker([p.lat,p.lon],{radius:rad(p),fillColor:o=='dif'?col(p.dif):acol(p.abst_pct),color:'#333',weight:1,fillOpacity:.9}),{p})
-   .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${p.abst_pct}%`}`).on('click',()=>det(p))))).addTo(m);
+  const pts=rows(z,'local').filter(p=>p.lat!=null).sort((a,b)=>b.validos-a.validos);
+  g=L.featureGroup(pts.map(p=>p.secoes.split(', ').concat(p.id).reduce((x,k)=>(mk[k]=x),Object.assign(L.circleMarker([p.lat,p.lon],{radius:rad(p),fillColor:cc(p[o]),color:'#333',weight:1,fillOpacity:.9}),{p})
+   .bindPopup(`<b>${p.nome??''}</b><br>${o=='dif'?`${p.dif>0?'+':''}${p.dif} pp`:`abstenção ${sg(p.abst_pct)}${dt?' pp':'%'}`}`).on('click',()=>det(p))))).addTo(m);
   if(pts.length)m.fitBounds(g.getBounds());
   $('h').textContent=v=='secao'?'Seção · Local':'Local';
   [$('c1').textContent,$('c2').textContent,$('c3').textContent,$('c4').textContent]=o=='dif'?['Lula','Flávio','Válidos','Dif pp']:['Aptos','Compar.','Abst','Abst %'];
   $('t').innerHTML=R.map((r,i)=>`<tr><td>${i+1}</td><td>${r.lat!=null?`<a href="#" title="${r.lat}, ${r.lon}" onclick="go(${i});return false">📍</a>`:'<span title="sem coordenada">∅</span>'}</td><td>${v=='secao'?r.id+' · ':''}${r.nome??''}</td>`+
-   (o=='dif'?`<td>${r.lula}</td><td>${r.flavio}</td><td>${r.validos}</td><td style="background:${col(r.dif)}">${r.dif}</td>`
-            :`<td>${r.aptos}</td><td>${r.comparecimento}</td><td>${r.abst}</td><td style="background:${acol(r.abst_pct)}">${r.abst_pct}</td>`)+`</tr>`).join('');
+   (o=='dif'?`<td>${sg(r.lula)}</td><td>${sg(r.flavio)}</td><td>${sg(r.validos)}</td><td style="background:${cc(r.dif)}">${sg(r.dif)}</td>`
+            :`<td>${sg(r.aptos)}</td><td>${sg(r.comparecimento)}</td><td>${sg(r.abst)}</td><td style="background:${cc(r.abst_pct)}">${sg(r.abst_pct)}</td>`)+`</tr>`).join('');
 }
 function go(i){const r=R[i],x=mk[r.id];det(r);m.setView(x.getLatLng(),17);x.openPopup()}
-$('z').innerHTML=Object.keys(D).map(k=>`<option value=${k}>${k=='total'?'Total':'Zona '+k}</option>`).join('');
+$('z').innerHTML=Object.keys(D.t1).map(k=>`<option value=${k}>${k=='total'?'Total':'Zona '+k}</option>`).join('');
 $("z").value="total";document.querySelectorAll("input[value=dif],input[value=local]").forEach(e=>e.checked=true);  // browsers restore old form state on reload
-document.querySelectorAll('select,input').forEach(e=>e.onchange=show);show();
+document.querySelectorAll('select,input').forEach(e=>e.onchange=show);
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{T=b.dataset.t;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x==b));$('det').className='';show()});show();
 </script></body></html>

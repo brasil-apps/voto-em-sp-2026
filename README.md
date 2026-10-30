@@ -6,6 +6,8 @@ Mapa interativo com o resultado da eleição presidencial de 04/10/2026 **seçã
 
 ## O que o mapa mostra
 
+- **Abas.** "1º turno", "2º turno" e "Diferença" (2º turno − 1º turno, local a local: variação de votos, da vantagem Lula−Flávio em pp e da abstenção).
+
 - **Um ponto por local de votação.** A cor mostra a diferença entre Lula (13) e Flávio (22), em pontos percentuais dos votos válidos: vermelho quando Lula vence, azul quando Flávio vence, branco no empate. O tamanho do ponto cresce com o número de votos válidos.
 - **Abstenção.** No modo "Abstenção" a cor muda para a taxa de abstenção (aptos que não compareceram): branco até 15%, roxo escuro a partir de 40%.
 - **Detalhes.** Clique em um ponto, ou no 📍 da tabela, para abrir o painel à esquerda com os votos de todos os candidatos, brancos, nulos, comparecimento e abstenção.
@@ -30,14 +32,15 @@ São necessários Python 3 e [uv](https://docs.astral.sh/uv/) (ou pandas instala
 1. Baixe `eleitorado_local_votacao_2026_SP.csv` do portal de dados abertos e coloque-o nesta pasta.
 2. Baixe os boletins de urna (cerca de 27 mil seções, algumas horas):
    ```
-   python3 scrape_bu.py
+   python3 scrape_bu.py        # 1º turno
+   python3 scrape_bu.py 3221   # 2º turno
    ```
    O download é educado com o servidor: 3 conexões, pausa entre pedidos, e espera automática quando o servidor reclama. Se for interrompido, rode de novo: ele continua de onde parou. Seções que ainda não foram publicadas (erro 404) são puladas e podem ser baixadas depois rodando o script de novo.
 3. Gere o mapa e os rankings:
    ```
    uv run --with pandas python mapa.py
    ```
-   Isso cria `index.html`, `ranking.csv` (ordenado por Lula−Flávio) e `ranking_abstencao.csv`.
+   Isso cria `index.html`, `ranking.csv` (ordenado por Lula−Flávio) e `ranking_abstencao.csv`, mais as versões `_2turno`.
 
 ## Arquivos
 

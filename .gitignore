@@ -1,6 +1,6 @@
 bus/
 eleitorado_local_votacao_2026_SP.csv
-scrape.log
+scrape*.log
 __pycache__/
 .venv/
 .~lock*
